@@ -146,15 +146,25 @@ Role is checked server-side (Server Action / middleware) by querying the `profil
 # UI / UX Layout
 
 ## Layout Structure
-- **Sidebar** (desktop): contains tag filters + navigation links
-- **Sidebar → Drawer** (mobile): sidebar collapses into a bottom/side drawer
-- search input with **500ms debounce**
-- Bố cục chi tiết (Layout Breakdown)
-Phần Header (Hero Section)
-Được chia thành 2 cột không đối xứng (Asymmetric 2-column layout):
 
-Cột trái (Thương hiệu): Logo "TechStackHub" kích thước lớn, font chữ dạng khối dày (Chunky/Display font) có viền kép tạo điểm nhấn.
-Đây là 1 vd: (thiết kế lấy cảm hứng từ skill.sh nhưng thay đổi nội dung)
+* **Sidebar (Desktop):** Contains tag filters and navigation links.
+* **Sidebar → Drawer (Mobile):** The sidebar collapses into a bottom or side drawer navigation.
+* **Search Input:** Features a **500ms debounce** to optimize performance.
+
+---
+
+## Layout Breakdown
+
+### 🖥️ Header (Hero Section)
+
+Divided into an **asymmetric 2-column layout**:
+
+* **Left Column (Branding):** * A large-sized **"TechStackHub"** logo using a chunky/display font with a double-border effect for visual emphasis.
+* *Example (Design inspired by skills.sh but with customized content):*
+
+
+
+```html
 <div class="relative max-w-[320px] lg:max-w-[390px] overflow-hidden"><pre class="text-[12px] lg:text-[15px] tracking-[-1px] leading-[125%] text-(--ds-gray-700) select-none whitespace-pre font-[family-name:'Fira_Mono']">███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
 ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
 ███████╗█████╔╝ ██║██║     ██║     ███████╗
@@ -166,25 +176,31 @@ Cột trái (Thương hiệu): Logo "TechStackHub" kích thước lớn, font ch
 ███████ █████   ██ ██      ██      ███████
      ██ ██  ██  ██ ██      ██           ██
 ███████ ██   ██ ██ ███████ ███████ ███████
-                                              </pre></div>
+                                           </pre></div>
 
-Slogan phụ bên dưới: "COLLECTION OF USEFUL TECHNOLOGIES" bằng font chữ không chân (Sans-serif) viết hoa hoàn toàn.
+```
 
-Cột phải (Giới thiệu):
-
-Đoạn văn ngắn giải thích sản phẩm. Chữ màu xám nhẹ (Secondary text color) để giảm bớt độ nổi bật so với logo, giúp phân cấp thị giác tốt hơn.
-
-Phần Tương tác nhanh (Action & Integrations)
-Chia làm 2 khu vực chức năng rõ ràng:
-
-Bên trái nút ("Contribute"):
-
-Bên phải nút ("Bookmark"): 
+* **Sub-slogan below:** `"COLLECTION OF USEFUL TECHNOLOGIES"` rendered in a fully capitalized sans-serif font.
+* **Right Column (Introduction):**
+* A short paragraph explaining the product. It utilizes a light gray **secondary text color** to reduce visual weight compared to the main logo, establishing a cleaner visual hierarchy.
 
 
-Thanh tìm kiếm (Search Bar): * Thiết kế tối giản: Chỉ gồm một đường kẻ ngang phía dưới (Border-bottom), không có khung viền bao quanh.
 
-Có icon kính lúp bên trái và gợi ý phím tắt / ở góc phải (một pattern UX rất phổ biến cho dev
+---
+
+### ⚙️ Quick Actions (Action & Integrations Section)
+
+Divided into two distinct functional areas:
+
+* **Left Side ("Contribute" Button):** [Insert action details here]
+* **Right Side ("Bookmark" Button):** [Insert integration details here]
+
+---
+
+### 🔍 Search Bar
+
+* **Minimalist Design:** Features a borderless input layout that only uses a bottom accent line (`border-bottom`) rather than a full bounding box.
+* **UX Enhancements:** Includes a magnifying glass icon on the left and a `/` keyboard shortcut hint on the right (a highly popular and intuitive UX pattern for developer platforms).
 
 ## Technology Card
 - Clicking a card opens a **detail sheet/modal** (renders `detail-tech.tsx`)

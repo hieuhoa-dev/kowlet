@@ -4,28 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-
-export interface TechItem {
-    id: string | number;
-    name: string;
-    description?: string;
-    url?: string;
-    github_url?: string;
-    og_image?: string;
-    og_title?: string;
-    og_description?: string;
-    favicon?: string;
-    bookmark_count?: number;
-    tags?: { id: string | number; name: string }[];
-}
+import type { Tech } from "@/types/database";
 
 interface DetailTechProps {
     /** Item hiện tại đang xem */
-    tech: TechItem | null;
+    tech: Tech | null;
     /** Danh sách tất cả items để điều hướng prev/next */
-    items?: TechItem[];
+    items?: Tech[];
     onClose: () => void;
-    onNavigate?: (tech: TechItem) => void;
+    onNavigate?: (tech: Tech) => void;
 }
 
 export function DetailTech({ tech, items = [], onClose, onNavigate }: DetailTechProps) {
@@ -168,7 +155,7 @@ export function DetailTech({ tech, items = [], onClose, onNavigate }: DetailTech
                             </div>
                         </motion.div>
 
-                        {/* Prev / Next Navigation (only when items list provided) */}
+                        {/* Prev / Next Navigation */}
                         {items.length > 1 && onNavigate && (
                             <>
                                 <Button
