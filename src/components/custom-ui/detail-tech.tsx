@@ -2,299 +2,198 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Grid, X, ZoomIn } from "lucide-react";
-import { KeyboardEvent, useState } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-const galleryImages = [
-    {
-        id: 1,
-        url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500",
-        title: "Abstract Architecture",
-        category: "Architecture",
-    },
-    {
-        id: 2,
-        url: "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?w=500",
-        title: "Modern Design",
-        category: "Design",
-    },
-    {
-        id: 3,
-        url: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=500",
-        title: "Urban Landscape",
-        category: "Nature",
-    },
-    {
-        id: 4,
-        url: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=500",
-        title: "Digital Art",
-        category: "Art",
-    },
-    {
-        id: 5,
-        url: "https://images.unsplash.com/photo-1618556450991-2f1af64e8191?w=500",
-        title: "Creative Space",
-        category: "Architecture",
-    },
-    {
-        id: 6,
-        url: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=500",
-        title: "Minimalist View",
-        category: "Design",
-    },
-];
+export interface TechItem {
+    id: string | number;
+    name: string;
+    description?: string;
+    url?: string;
+    github_url?: string;
+    og_image?: string;
+    og_title?: string;
+    og_description?: string;
+    favicon?: string;
+    bookmark_count?: number;
+    tags?: { id: string | number; name: string }[];
+}
 
-export function GalleryGridBlock() {
-    const [selectedImage, setSelectedImage] = useState<number | null>(null);
-    const [filter, setFilter] = useState<string>("All");
+interface DetailTechProps {
+    /** Item hiện tại đang xem */
+    tech: TechItem | null;
+    /** Danh sách tất cả items để điều hướng prev/next */
+    items?: TechItem[];
+    onClose: () => void;
+    onNavigate?: (tech: TechItem) => void;
+}
 
-    const categories = [
-        "All",
-        ...new Set(galleryImages.map((img) => img.category)),
-    ];
-
-    const filteredImages =
-        filter === "All"
-            ? galleryImages
-            : galleryImages.filter((img) => img.category === filter);
-
-    const handleNext = () => {
-        if (selectedImage !== null) {
-            const currentIndex = galleryImages.findIndex(
-                (img) => img.id === selectedImage
-            );
-            const nextIndex = (currentIndex + 1) % galleryImages.length;
-            setSelectedImage(galleryImages[nextIndex].id);
-        }
-    };
+export function DetailTech({ tech, items = [], onClose, onNavigate }: DetailTechProps) {
+    const currentIndex = items.findIndex((t) => t.id === tech?.id);
 
     const handlePrev = () => {
-        if (selectedImage !== null) {
-            const currentIndex = galleryImages.findIndex(
-                (img) => img.id === selectedImage
-            );
-            const prevIndex =
-                (currentIndex - 1 + galleryImages.length) % galleryImages.length;
-            setSelectedImage(galleryImages[prevIndex].id);
-        }
+        if (!onNavigate || items.length === 0 || currentIndex < 0) return;
+        const prevIndex = (currentIndex - 1 + items.length) % items.length;
+        onNavigate(items[prevIndex]);
     };
 
-    const selectedImageData = galleryImages.find(
-        (img) => img.id === selectedImage
-    );
-
-    const handleCardKeyDown = (
-        event: KeyboardEvent<HTMLDivElement>,
-        imageId: number
-    ) => {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setSelectedImage(imageId);
-        }
+    const handleNext = () => {
+        if (!onNavigate || items.length === 0 || currentIndex < 0) return;
+        const nextIndex = (currentIndex + 1) % items.length;
+        onNavigate(items[nextIndex]);
     };
 
     return (
-        <section
-            className="w-full bg-background px-4 py-16"
-            aria-labelledby="gallery-heading"
-        >
-            <div className="mx-auto max-w-7xl">
+        <AnimatePresence>
+            {tech !== null && (
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-12 text-center"
-                    role="region"
-                    aria-labelledby="gallery-heading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+                    onClick={onClose}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="detail-tech-title"
+                    aria-describedby="detail-tech-description"
                 >
-                    <Badge className="mb-4" variant="secondary">
-                        <Grid className="mr-1 h-3 w-3" />
-                        Gallery
-                    </Badge>
-                    <h2
-                        id="gallery-heading"
-                        className="mb-4 text-4xl font-bold tracking-tight"
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative w-full max-w-2xl rounded-2xl bg-background shadow-2xl overflow-hidden"
                     >
-                        Our Portfolio
-                    </h2>
-                    <p className="mx-auto max-w-2xl text-muted-foreground">
-                        Explore our collection of stunning visuals and creative work
-                    </p>
-                </motion.div>
-
-                {/* Filter Buttons */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="mb-8 flex flex-wrap justify-center gap-2"
-                    role="group"
-                    aria-label="Gallery categories"
-                >
-                    {categories.map((category) => (
+                        {/* Close Button */}
                         <Button
-                            key={category}
-                            variant={filter === category ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFilter(category)}
-                            aria-pressed={filter === category}
+                            size="icon"
+                            variant="ghost"
+                            className="absolute right-3 top-3 z-10"
+                            onClick={onClose}
+                            aria-label="Close detail"
                         >
-                            {category}
+                            <X className="h-5 w-5" />
                         </Button>
-                    ))}
-                </motion.div>
 
-                {/* Gallery Grid */}
-                <motion.div
-                    layout
-                    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                    role="list"
-                    aria-label="Gallery items"
-                >
-                    <AnimatePresence mode="popLayout">
-                        {filteredImages.map((image, index) => (
-                            <motion.div
-                                key={image.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                role="listitem"
-                            >
-                                <Card
-                                    className="group relative cursor-pointer overflow-hidden border-border transition-all hover:border-ring hover:shadow-xl"
-                                    onClick={() => setSelectedImage(image.id)}
-                                    onKeyDown={(event) => handleCardKeyDown(event, image.id)}
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label={`View details for ${image.title}`}
-                                >
-                                    <div className="relative aspect-square overflow-hidden">
-                                        <motion.img
-                                            src={image.url}
-                                            alt={image.title}
-                                            className="h-full w-full object-cover"
-                                            whileHover={{ scale: 1.1 }}
-                                            transition={{ duration: 0.3 }}
-                                        />
-
-                                        {/* Overlay */}
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            whileHover={{ opacity: 1 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm"
-                                            aria-hidden="true"
-                                        >
-                                            <ZoomIn className="mb-2 h-8 w-8 text-[var(--muted-foreground)]" />
-                                            <h3 className="mb-1 text-center text-lg font-semibold text-[var(--muted-foreground)]">
-                                                {image.title}
-                                            </h3>
-                                            <Badge variant="secondary">{image.category}</Badge>
-                                        </motion.div>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </motion.div>
-
-                {/* Lightbox */}
-                <AnimatePresence>
-                    {selectedImage !== null && selectedImageData && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-                            onClick={() => setSelectedImage(null)}
-                            role="dialog"
-                            aria-modal="true"
-                            aria-labelledby="gallery-dialog-title"
-                            aria-describedby="gallery-dialog-description"
-                        >
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.8, opacity: 0 }}
-                                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="relative max-h-[90vh] max-w-5xl"
-                            >
-                                {/* Close Button */}
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute -right-12 top-0 text-[var(--muted-foreground)] hover:bg-white/10"
-                                    onClick={() => setSelectedImage(null)}
-                                    aria-label="Close gallery dialog"
-                                >
-                                    <X className="h-6 w-6" />
-                                </Button>
-
-                                {/* Navigation Buttons */}
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:bg-white/10"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handlePrev();
-                                    }}
-                                    aria-label="View previous image"
-                                >
-                                    <ChevronLeft className="h-8 w-8" />
-                                </Button>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:bg-white/10"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleNext();
-                                    }}
-                                    aria-label="View next image"
-                                >
-                                    <ChevronRight className="h-8 w-8" />
-                                </Button>
-
-                                {/* Image */}
+                        {/* OG Image */}
+                        {tech.og_image && (
+                            <div className="relative w-full aspect-video overflow-hidden bg-muted">
                                 <motion.img
-                                    key={selectedImage}
-                                    src={selectedImageData.url}
-                                    alt={selectedImageData.title}
-                                    className="max-h-[80vh] w-auto rounded-lg"
+                                    key={String(tech.id)}
+                                    src={tech.og_image}
+                                    alt={tech.og_title ?? tech.name}
+                                    className="h-full w-full object-cover"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.2 }}
+                                    transition={{ duration: 0.25 }}
                                 />
+                            </div>
+                        )}
 
-                                {/* Image Info */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="mt-4 text-center text-[var(--muted-foreground)]"
-                                    id="gallery-dialog-description"
-                                >
-                                    <h3
-                                        className="mb-2 text-xl font-semibold"
-                                        id="gallery-dialog-title"
+                        {/* Content */}
+                        <motion.div
+                            key={String(tech.id) + "-content"}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 }}
+                            className="p-6 space-y-4"
+                            id="detail-tech-description"
+                        >
+                            {/* Header */}
+                            <div className="flex items-start gap-3">
+                                {tech.favicon && (
+                                    <img
+                                        src={tech.favicon}
+                                        alt=""
+                                        className="w-8 h-8 rounded object-contain flex-shrink-0 mt-0.5"
+                                    />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <h2
+                                        id="detail-tech-title"
+                                        className="text-xl font-semibold leading-tight truncate"
                                     >
-                                        {selectedImageData.title}
-                                    </h3>
-                                    <Badge variant="secondary">
-                                        {selectedImageData.category}
-                                    </Badge>
-                                </motion.div>
-                            </motion.div>
+                                        {tech.name}
+                                    </h2>
+                                    {tech.og_title && tech.og_title !== tech.name && (
+                                        <p className="text-sm text-muted-foreground truncate">
+                                            {tech.og_title}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            {(tech.og_description ?? tech.description) && (
+                                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+                                    {tech.og_description ?? tech.description}
+                                </p>
+                            )}
+
+                            {/* Tags */}
+                            {tech.tags && tech.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {tech.tags.map((tag) => (
+                                        <Badge key={tag.id} variant="secondary">
+                                            {tag.name}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Links + stats */}
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                                <div className="flex gap-2">
+                                    {tech.url && (
+                                        <Button asChild size="sm" variant="default">
+                                            <a href={tech.url} target="_blank" rel="noopener noreferrer">
+                                                Visit Website
+                                            </a>
+                                        </Button>
+                                    )}
+                                    {tech.github_url && (
+                                        <Button asChild size="sm" variant="outline">
+                                            <a href={tech.github_url} target="_blank" rel="noopener noreferrer">
+                                                GitHub
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
+                                {tech.bookmark_count !== undefined && (
+                                    <span className="text-xs text-muted-foreground">
+                                        {tech.bookmark_count} bookmarks
+                                    </span>
+                                )}
+                            </div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </section>
+
+                        {/* Prev / Next Navigation (only when items list provided) */}
+                        {items.length > 1 && onNavigate && (
+                            <>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                                    aria-label="Previous technology"
+                                >
+                                    <ChevronLeft className="h-6 w-6" />
+                                </Button>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                    onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                                    aria-label="Next technology"
+                                >
+                                    <ChevronRight className="h-6 w-6" />
+                                </Button>
+                            </>
+                        )}
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }

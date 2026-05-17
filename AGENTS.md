@@ -60,16 +60,21 @@ Admins can:
 - Server-side fetch for initial technologies and tags
 
 ### 2. Saved Technologies (`/bookmark`)
+- If user is **not logged in**: show login UI inline on the page (do not redirect)
 - Display saved technologies
 - Search technologies
 - Filter by tags
 
 ### 3. Contribution Request
-Users can submit:
+Users can submit **both** fields in a single request:
 - website URL
 - GitHub repository URL
 
-The request will be sent to admins for review using Supabase Realtime.
+The request will be sent to admins via:
+- Supabase Realtime (live notification in admin panel)
+- Email notification
+
+After admin **rejects**: no notification is sent to the user.
 
 ---
 
@@ -91,8 +96,7 @@ Realtime contribution request management:
 
 When approved:
 - Automatically create a technology record
-- Fetch preview metadata (Server Action)
-- Generate tags using AI (optional)
+- Fetch preview metadata via Server Action (OG image, title, description) and **save to `tech` table**
 ---
 
 # Server Actions
@@ -101,30 +105,30 @@ Used for:
 - submit contribution requests
 - approve/reject notifications
 - create/update/delete technologies
-- fetch preview metadata
-- AI tag generation
-- 
+- fetch preview metadata (only on contribution approval)
+
 # Routing Structure
 
 ```txt
 /app
 ├── page.tsx
-├── save
-│   └── page.tsx (if not login, show login component)
+├── bookmark
+│   └── page.tsx (if not logged in, show login UI inline)
 ├── admin
 │   ├── page.tsx
 │   └── notification/page.tsx
 ```
 Protected Routes:
-- /save
+- /bookmark (soft-protected: shows login UI inline)
 - /admin/*
 
 # Database Schema
 - tag: id, name (text, unique), created_at, updated_at
 - tag_tech: id, tag_id, tech_id
-- tech: id, name, slug, description, github_url, star, url, created_at, updated_at
-- notification: id, user_id,status, url, github_url, created_at, updated_at
+- tech: id, name, slug, description, github_url, **bookmark_count** (int, count from bookmark table), url, og_image, og_title, og_description, favicon, created_at, updated_at
+- notification: id, user_id, status, url, github_url, created_at, updated_at
 - bookmark: id, user_id, tech_id, created_at, updated_at
+- profile: id (references auth.users), role (text: 'user' | 'admin'), created_at, updated_at
 
 # Authentication
 
@@ -133,10 +137,22 @@ Supabase Auth:
 - Register
 - Logout
 
-Roles:
-- user
-- admin
+Roles are managed via a separate **`profile`** table:
+- `profile.role = 'user'` — regular user
+- `profile.role = 'admin'` — admin
+
+Role is checked server-side (Server Action / middleware) by querying the `profile` table.
+
+# UI / UX Layout
+
+## Layout Structure
+- **Sidebar** (desktop): contains tag filters + navigation links
+- **Sidebar → Drawer** (mobile): sidebar collapses into a bottom/side drawer
+- **Top Navigation**: contains global search input with **500ms debounce**
+
+## Technology Card
+- Clicking a card opens a **detail sheet/modal** (renders `detail-tech.tsx`)
 
 # Skill
-Use if design admin  
+Use if design admin
 - skill data-table-filters
