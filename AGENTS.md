@@ -66,7 +66,7 @@ Admins can:
 - Filter by tags
 
 ### 3. Contribution Request
-Users can submit **both** fields in a single request:
+Users can submit at least one information fields in a single request:
 - website URL
 - GitHub repository URL
 
@@ -148,7 +148,43 @@ Role is checked server-side (Server Action / middleware) by querying the `profil
 ## Layout Structure
 - **Sidebar** (desktop): contains tag filters + navigation links
 - **Sidebar → Drawer** (mobile): sidebar collapses into a bottom/side drawer
-- **Top Navigation**: contains global search input with **500ms debounce**
+- search input with **500ms debounce**
+- Bố cục chi tiết (Layout Breakdown)
+Phần Header (Hero Section)
+Được chia thành 2 cột không đối xứng (Asymmetric 2-column layout):
+
+Cột trái (Thương hiệu): Logo "TechStackHub" kích thước lớn, font chữ dạng khối dày (Chunky/Display font) có viền kép tạo điểm nhấn.
+Đây là 1 vd: (thiết kế lấy cảm hứng từ skill.sh nhưng thay đổi nội dung)
+<div class="relative max-w-[320px] lg:max-w-[390px] overflow-hidden"><pre class="text-[12px] lg:text-[15px] tracking-[-1px] leading-[125%] text-(--ds-gray-700) select-none whitespace-pre font-[family-name:'Fira_Mono']">███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+███████╗█████╔╝ ██║██║     ██║     ███████╗
+╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+███████║██║  ██╗██║███████╗███████╗███████║
+╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝</pre><pre class="absolute top-0 left-0 text-[12px] lg:text-[15px] tracking-[-1px] leading-[125%] text-foreground select-none whitespace-pre font-[family-name:'Fira_Mono']">
+███████ ██   ██ ██ ██      ██      ███████
+██      ██  ██  ██ ██      ██      ██
+███████ █████   ██ ██      ██      ███████
+     ██ ██  ██  ██ ██      ██           ██
+███████ ██   ██ ██ ███████ ███████ ███████
+                                              </pre></div>
+
+Slogan phụ bên dưới: "COLLECTION OF USEFUL TECHNOLOGIES" bằng font chữ không chân (Sans-serif) viết hoa hoàn toàn.
+
+Cột phải (Giới thiệu):
+
+Đoạn văn ngắn giải thích sản phẩm. Chữ màu xám nhẹ (Secondary text color) để giảm bớt độ nổi bật so với logo, giúp phân cấp thị giác tốt hơn.
+
+Phần Tương tác nhanh (Action & Integrations)
+Chia làm 2 khu vực chức năng rõ ràng:
+
+Bên trái nút ("Contribute"):
+
+Bên phải nút ("Bookmark"): 
+
+
+Thanh tìm kiếm (Search Bar): * Thiết kế tối giản: Chỉ gồm một đường kẻ ngang phía dưới (Border-bottom), không có khung viền bao quanh.
+
+Có icon kính lúp bên trái và gợi ý phím tắt / ở góc phải (một pattern UX rất phổ biến cho dev
 
 ## Technology Card
 - Clicking a card opens a **detail sheet/modal** (renders `detail-tech.tsx`)
