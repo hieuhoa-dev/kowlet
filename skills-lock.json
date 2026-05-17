@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "data-table-filters": {
+      "source": "openstatushq/data-table-filters",
+      "sourceType": "github",
+      "skillPath": "skills/SKILL.md",
+      "computedHash": "e87752d4eb5db90f3f167859ebfb7d2b7a3bdb806a91aafbfcdee1b1bc19f22b"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "5e179217b674b2c9617e54b09578b1119a315c784c22a9f22d940926de082d87"
+    }
+  }
+}
