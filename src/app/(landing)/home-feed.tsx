@@ -165,6 +165,7 @@ export function HomeFeed({
         selectedTags={selectedTags}
         onTagToggle={handleTagToggle}
         onTagClear={handleTagClear}
+        showUser={Boolean(userId)}
       />
 
       <SidebarInset className="flex flex-col">
@@ -174,7 +175,7 @@ export function HomeFeed({
           {/* Hero */}
           <section className="mb-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-12">
-                 <div className="relative font-mono text-[11px] leading-[125%] lg:text-[13px] font-[family-name:var(--font-geist-mono)]">
+              <div className="relative font-mono text-[11px] leading-[125%] lg:text-[13px] font-[family-name:var(--font-geist-mono)]">
                 {/* Background Layer (Muted) */}
                 <pre className="text-muted-foreground/30 whitespace-pre select-none ">
                   {`████████╗███████╗  ██████╗██╗  ██╗
@@ -210,9 +211,9 @@ export function HomeFeed({
           {/* Sort bar */}
           <div className="mb-5 flex items-center justify-between">
             <p className="text-base font-medium">
-             List technologies: {" "}
-             <span className="text-muted-foreground">
-              {techs.length > 0 ? `${techs.length}+ technologies` : ""}
+              List technologies:{" "}
+              <span className="text-muted-foreground">
+                {techs.length > 0 ? `${techs.length}+ technologies` : ""}
               </span>
             </p>
             <Select value={sort} onValueChange={handleSortChange}>

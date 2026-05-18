@@ -114,6 +114,7 @@ export function BookmarkFeed({
         selectedTags={selectedTags}
         onTagToggle={handleTagToggle}
         onTagClear={handleTagClear}
+        showUser
       />
 
       <SidebarInset className="flex flex-col">

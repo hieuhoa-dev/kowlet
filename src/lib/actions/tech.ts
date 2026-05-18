@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getLinkPreview } from "link-preview-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Tag, Tech } from "@/types/database";
 
@@ -27,6 +28,24 @@ type TechPayload = {
   og_description?: string | null;
   favicon?: string | null;
 };
+
+type PreviewData = {
+  title?: string;
+  description?: string;
+  images?: string[];
+  favicons?: string[];
+};
+
+async function fetchPreview(url: string): Promise<PreviewData> {
+  try {
+    const preview = (await getLinkPreview(url, {
+      followRedirects: "follow",
+    })) as PreviewData;
+    return preview;
+  } catch {
+    return {};
+  }
+}
 
 type TechRow = Omit<Tech, "tags"> & {
   tags?: Array<{ tag: Tag }>;
@@ -102,7 +121,27 @@ export async function getTechs({
 export async function createTech(payload: TechPayload) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
-  const { error } = await supabase.from("tech").insert(payload);
+
+  let enrichedPayload = payload;
+  const sourceUrl = payload.url ?? payload.github_url ?? null;
+
+  if (
+    sourceUrl &&
+    !payload.og_title &&
+    !payload.og_description &&
+    !payload.og_image
+  ) {
+    const preview = await fetchPreview(sourceUrl);
+    enrichedPayload = {
+      ...payload,
+      og_title: preview.title ?? payload.og_title ?? null,
+      og_description: preview.description ?? payload.og_description ?? null,
+      og_image: preview.images?.[0] ?? payload.og_image ?? null,
+      favicon: preview.favicons?.[0] ?? payload.favicon ?? null,
+    };
+  }
+
+  const { error } = await supabase.from("tech").insert(enrichedPayload);
   if (error) throw new Error(error.message);
 }
 
@@ -118,4 +157,22 @@ export async function deleteTech(id: string) {
   const supabase = createClient(cookieStore);
   const { error } = await supabase.from("tech").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function updateTechTags(techId: string, tagIds: string[]) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { error: deleteError } = await supabase
+    .from("tag_tech")
+    .delete()
+    .eq("tech_id", techId);
+
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (tagIds.length === 0) return;
+
+  const rows = tagIds.map((tagId) => ({ tag_id: tagId, tech_id: techId }));
+  const { error: insertError } = await supabase.from("tag_tech").insert(rows);
+  if (insertError) throw new Error(insertError.message);
 }

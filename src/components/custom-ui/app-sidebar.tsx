@@ -39,6 +39,7 @@ interface AppSidebarProps {
   selectedTags: string[];
   onTagToggle: (tagId: string) => void;
   onTagClear: () => void;
+  showUser?: boolean;
 }
 
 export function AppSidebar({
@@ -46,6 +47,7 @@ export function AppSidebar({
   selectedTags,
   onTagToggle,
   onTagClear,
+  showUser = true,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const { setOpen } = useSidebar();
@@ -105,13 +107,15 @@ export function AppSidebar({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser
-            user={{
-              name: "Guest",
-              email: "guest@techstackhub.dev",
-              avatar: "/avatars/shadcn.jpg",
-            }}
-          />
+          {showUser && (
+            <NavUser
+              user={{
+                name: "Guest",
+                email: "guest@techstackhub.dev",
+                avatar: "/avatars/shadcn.jpg",
+              }}
+            />
+          )}
         </SidebarFooter>
       </Sidebar>
 

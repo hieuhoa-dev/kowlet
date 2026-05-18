@@ -16,6 +16,13 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,7 +30,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createTech, deleteTech, updateTech } from "@/lib/actions/tech";
+import {
+  createTech,
+  deleteTech,
+  updateTech,
+  updateTechTags,
+} from "@/lib/actions/tech";
 import type { Tech } from "@/types/database";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -84,12 +96,14 @@ export function AdminTechTable({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tech | null>(null);
+  const [sheetTech, setSheetTech] = useState<Tech | null>(null);
   const [loading, setLoading] = useState(false);
+  const [tagLoading, setTagLoading] = useState(false);
   const [query, setQuery] = useQueryState(
     "q",
     parseAsString.withDefault(initialQuery ?? ""),
   );
-  const [selectedTagIds, setSelectedTagIds] = useQueryState(
+  const [filterTagIds, setFilterTagIds] = useQueryState(
     "tags",
     parseAsArrayOf(parseAsString).withDefault(initialSelectedTags),
   );
@@ -97,6 +111,7 @@ export function AdminTechTable({
     "page",
     parseAsInteger.withDefault(page),
   );
+  const [sheetTagIds, setSheetTagIds] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(query);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -120,16 +135,16 @@ export function AdminTechTable({
   };
 
   const handleTagToggle = (tagId: string) => {
-    const next = selectedTagIds.includes(tagId)
-      ? selectedTagIds.filter((id) => id !== tagId)
-      : [...selectedTagIds, tagId];
-    setSelectedTagIds(next);
+    const next = filterTagIds.includes(tagId)
+      ? filterTagIds.filter((id) => id !== tagId)
+      : [...filterTagIds, tagId];
+    setFilterTagIds(next);
     setCurrentPage(0);
   };
 
   const handleClearFilters = () => {
     setQuery(null);
-    setSelectedTagIds([]);
+    setFilterTagIds([]);
     setCurrentPage(0);
   };
 
@@ -149,6 +164,30 @@ export function AdminTechTable({
       github_url: tech.github_url ?? "",
     });
     setOpen(true);
+  };
+
+  const openSheet = (tech: Tech) => {
+    setSheetTech(tech);
+    setSheetTagIds(tech.tags?.map((tag) => tag.id) ?? []);
+  };
+
+  const toggleSheetTag = (tagId: string) =>
+    setSheetTagIds((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId],
+    );
+
+  const handleSaveTags = async () => {
+    if (!sheetTech) return;
+    setTagLoading(true);
+    try {
+      await updateTechTags(sheetTech.id, sheetTagIds);
+      setSheetTech(null);
+      router.refresh();
+    } finally {
+      setTagLoading(false);
+    }
   };
 
   const handleSubmit = async (values: FormValues) => {
@@ -211,12 +250,12 @@ export function AdminTechTable({
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-9">
                 Tags
-                {selectedTagIds.length > 0 && (
+                {filterTagIds.length > 0 && (
                   <Badge
                     variant="secondary"
                     className="ml-2 h-4 px-1 text-[10px]"
                   >
-                    {selectedTagIds.length}
+                    {filterTagIds.length}
                   </Badge>
                 )}
               </Button>
@@ -234,7 +273,7 @@ export function AdminTechTable({
                     className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-accent"
                   >
                     <Checkbox
-                      checked={selectedTagIds.includes(tag.id)}
+                      checked={filterTagIds.includes(tag.id)}
                       onCheckedChange={() => handleTagToggle(tag.id)}
                     />
                     <span>{tag.name}</span>
@@ -243,7 +282,7 @@ export function AdminTechTable({
               </div>
             </PopoverContent>
           </Popover>
-          {(query || selectedTagIds.length > 0) && (
+          {(query || filterTagIds.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
@@ -283,7 +322,11 @@ export function AdminTechTable({
               </TableRow>
             )}
             {techs.map((tech) => (
-              <TableRow key={tech.id}>
+              <TableRow
+                key={tech.id}
+                className="cursor-pointer"
+                onClick={() => openSheet(tech)}
+              >
                 <TableCell className="font-medium">{tech.name}</TableCell>
                 <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
                   {tech.url ?? "—"}
@@ -300,7 +343,10 @@ export function AdminTechTable({
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7"
-                      onClick={() => openEdit(tech)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openEdit(tech);
+                      }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -308,7 +354,10 @@ export function AdminTechTable({
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(tech.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDelete(tech.id);
+                      }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -408,6 +457,116 @@ export function AdminTechTable({
           </form>
         </DialogContent>
       </Dialog>
+
+      <Sheet
+        open={!!sheetTech}
+        onOpenChange={(value) => !value && setSheetTech(null)}
+      >
+        <SheetContent className="flex flex-col gap-0 overflow-y-auto sm:max-w-lg">
+          <SheetHeader className="pb-4">
+            <SheetTitle>Technology Details</SheetTitle>
+            <SheetDescription>
+              Manage tags for this technology.
+            </SheetDescription>
+          </SheetHeader>
+
+          {sheetTech && (
+            <div className="flex flex-col gap-5 pt-2 px-4">
+              <div>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Name
+                </p>
+                <p className="text-sm font-medium">{sheetTech.name}</p>
+              </div>
+
+              {sheetTech.url && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Website URL
+                  </p>
+                  <a
+                    href={sheetTech.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {sheetTech.url}
+                  </a>
+                </div>
+              )}
+
+              {sheetTech.github_url && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    GitHub URL
+                  </p>
+                  <a
+                    href={sheetTech.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {sheetTech.github_url}
+                  </a>
+                </div>
+              )}
+
+              <div>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Assign Tags
+                </p>
+                <div className="flex flex-wrap gap-1.5 rounded-md border border-border p-2.5 max-h-48 overflow-y-auto">
+                  {tags.map((tag) => {
+                    const active = sheetTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleSheetTag(tag.id)}
+                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:bg-accent"
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    );
+                  })}
+                  {tags.length === 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      No tags available.
+                    </span>
+                  )}
+                </div>
+                {sheetTagIds.length > 0 && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {sheetTagIds.length} tag{sheetTagIds.length > 1 ? "s" : ""}{" "}
+                    selected
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1"
+                  onClick={handleSaveTags}
+                  disabled={tagLoading}
+                >
+                  {tagLoading ? "Saving..." : "Save Tags"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setSheetTech(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
