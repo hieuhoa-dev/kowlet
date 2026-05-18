@@ -292,7 +292,7 @@ export function NotificationTable({
           </SheetHeader>
 
           {selected && (
-            <div className="flex flex-col gap-5 pt-2">
+            <div className="flex flex-col gap-5 pt-2 px-4">
               {/* Status */}
               <div>
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

@@ -7,13 +7,13 @@ import { TechCard } from "@/components/custom-ui/tech-card";
 import { TopNav } from "@/components/custom-ui/top-nav";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { toggleBookmark } from "@/lib/actions/bookmark";
-import type { Tech } from "@/types/database";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { TagGroup, Tech } from "@/types/database";
+import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import { useCallback, useMemo, useState } from "react";
 
 interface BookmarkFeedProps {
   initialTechs: Tech[];
-  tags: { id: string; name: string }[];
+  tagGroups: TagGroup[];
   initialBookmarkedIds: string[];
   initialSearch: string;
   initialSelectedTags: string[];
@@ -36,25 +36,29 @@ function matchesSearch(tech: Tech, query: string) {
 
 export function BookmarkFeed({
   initialTechs,
-  tags,
+  tagGroups,
   initialBookmarkedIds,
   initialSearch,
   initialSelectedTags,
 }: BookmarkFeedProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [search] = useQueryState(
+    "q",
+    parseAsString.withDefault(initialSearch ?? ""),
+  );
+  const [selectedTags, setSelectedTags] = useQueryState(
+    "tags",
+    parseAsArrayOf(parseAsString).withDefault(initialSelectedTags),
+  );
 
   const [techs, setTechs] = useState<Tech[]>(initialTechs);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
     new Set(initialBookmarkedIds),
   );
-  const [selectedTags, setSelectedTags] =
-    useState<string[]>(initialSelectedTags);
   const [selectedTech, setSelectedTech] = useState<Tech | null>(null);
   const [contributeOpen, setContributeOpen] = useState(false);
 
   const filteredTechs = useMemo(() => {
-    const query = (searchParams.get("q") ?? initialSearch).trim();
+    const query = search.trim();
     const selected = selectedTags;
 
     return techs.filter((tech) => {
@@ -71,7 +75,7 @@ export function BookmarkFeed({
 
       return true;
     });
-  }, [techs, searchParams, selectedTags, initialSearch]);
+  }, [techs, search, selectedTags]);
 
   const handleTagToggle = useCallback(
     (tagId: string) => {
@@ -79,29 +83,13 @@ export function BookmarkFeed({
         ? selectedTags.filter((t) => t !== tagId)
         : [...selectedTags, tagId];
       setSelectedTags(next);
-      const params = new URLSearchParams(searchParams.toString());
-      if (next.length > 0) {
-        params.set("tags", next.join(","));
-      } else {
-        params.delete("tags");
-      }
-      router.replace(`/bookmark?${params.toString()}`);
     },
-    [selectedTags, searchParams, router],
+    [selectedTags, setSelectedTags],
   );
 
   const handleTagClear = useCallback(() => {
     setSelectedTags([]);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("tags");
-    router.replace(`/bookmark?${params.toString()}`);
-  }, [searchParams, router]);
-
-  useEffect(() => {
-    const tagsParam = searchParams.get("tags");
-    const tags = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
-    setSelectedTags(tags);
-  }, [searchParams]);
+  }, [setSelectedTags]);
 
   const handleBookmark = async (techId: string) => {
     setBookmarkedIds((prev) => {
@@ -122,7 +110,7 @@ export function BookmarkFeed({
   return (
     <>
       <AppSidebar
-        tags={tags}
+        tagGroups={tagGroups}
         selectedTags={selectedTags}
         onTagToggle={handleTagToggle}
         onTagClear={handleTagClear}

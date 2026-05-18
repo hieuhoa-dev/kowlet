@@ -3,6 +3,13 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
@@ -10,9 +17,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -22,6 +27,7 @@ import { Bookmark, Command, Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavUser } from "@/components/nav-user";
+import type { TagGroup } from "@/types/database";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Home },
@@ -29,27 +35,24 @@ const navLinks = [
 ];
 
 interface AppSidebarProps {
-  tags: { id: string; name: string }[];
+  tagGroups: TagGroup[];
   selectedTags: string[];
   onTagToggle: (tagId: string) => void;
   onTagClear: () => void;
 }
 
 export function AppSidebar({
-  tags,
+  tagGroups,
   selectedTags,
   onTagToggle,
   onTagClear,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const { setOpen } = useSidebar();
-  const [filter, setFilter] = React.useState("");
-
-  const visibleTags = React.useMemo(() => {
-    const query = filter.trim().toLowerCase();
-    if (!query) return tags;
-    return tags.filter((tag) => tag.name.toLowerCase().includes(query));
-  }, [filter, tags]);
+  const groups = React.useMemo(
+    () => tagGroups.filter((group) => group.tags.length > 0),
+    [tagGroups],
+  );
 
   return (
     <Sidebar
@@ -116,7 +119,7 @@ export function AppSidebar({
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
             <div className="text-base font-medium text-foreground">
-              Filter by Tag
+              Filter by Category
             </div>
             {selectedTags.length > 0 && (
               <Button
@@ -129,42 +132,68 @@ export function AppSidebar({
               </Button>
             )}
           </div>
-          <SidebarInput
-            placeholder="Search tags..."
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent>
-              <ScrollArea className="h-[calc(100vh-220px)]">
-                <div className="flex flex-col px-2">
-                  {visibleTags.length === 0 && (
+              <ScrollArea className="h-[calc(100vh-180px)]">
+                <div className="flex flex-col px-2 pb-4">
+                  {groups.length === 0 && (
                     <div className="px-2 py-4 text-sm text-muted-foreground">
                       No tags found.
                     </div>
                   )}
-                  {visibleTags.map((tag) => {
-                    const isActive = selectedTags.includes(tag.id);
-                    return (
-                      <button
-                        key={tag.id}
-                        onClick={() => onTagToggle(tag.id)}
-                        className="flex w-full items-center justify-between border-b border-sidebar-border px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  <Accordion type="multiple" className="w-full">
+                    {groups.map((group) => (
+                      <AccordionItem
+                        key={group.category.id}
+                        value={group.category.id}
                       >
-                        <span>{tag.name}</span>
-                        {isActive && (
-                          <Badge
-                            variant="secondary"
-                            className="h-4 px-1 text-[10px]"
-                          >
-                            ✓
-                          </Badge>
-                        )}
-                      </button>
-                    );
-                  })}
+                        <AccordionTrigger className="px-2 py-2 text-sm">
+                          <span className="flex items-center gap-2">
+                            <span>{group.category.name}</span>
+                            <Badge
+                              variant="outline"
+                              className="h-4 px-1 text-[10px]"
+                            >
+                              {group.tags.length}
+                            </Badge>
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-3">
+                          <div className="flex flex-col gap-2 px-2">
+                            {group.tags.map((tag) => {
+                              const isActive = selectedTags.includes(tag.id);
+                              return (
+                                <label
+                                  key={tag.id}
+                                  className="flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 text-sm transition-colors hover:bg-sidebar-accent"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={isActive}
+                                      onCheckedChange={() =>
+                                        onTagToggle(tag.id)
+                                      }
+                                    />
+                                    <span>{tag.name}</span>
+                                  </span>
+                                  {isActive && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-4 px-1 text-[10px]"
+                                    >
+                                      ✓
+                                    </Badge>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 </div>
               </ScrollArea>
             </SidebarGroupContent>

@@ -16,8 +16,14 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { toggleBookmark } from "@/lib/actions/bookmark";
 import { getTechs, type SortOption } from "@/lib/actions/tech";
 import type { TagGroup, Tech } from "@/types/database";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryState,
+} from "nuqs";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface HomeFeedProps {
   initialTechs: Tech[];
@@ -35,28 +41,41 @@ const SORT_LABELS: Record<SortOption, string> = {
   most_bookmarked: "Most bookmarked",
 };
 
+const SORT_KEYS: SortOption[] = ["newest", "oldest", "most_bookmarked"];
+
 export function HomeFeed({
   initialTechs,
   tagGroups,
   initialBookmarkedIds,
+  initialSearch,
   initialSelectedTags,
   initialSort,
   userId,
 }: HomeFeedProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [search] = useQueryState(
+    "q",
+    parseAsString.withDefault(initialSearch ?? ""),
+  );
+  const [selectedTags, setSelectedTags] = useQueryState(
+    "tags",
+    parseAsArrayOf(parseAsString).withDefault(initialSelectedTags),
+  );
+  const [sort, setSort] = useQueryState<SortOption>(
+    "sort",
+    parseAsStringEnum(SORT_KEYS).withDefault(initialSort),
+  );
 
   const [techs, setTechs] = useState<Tech[]>(initialTechs);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
     new Set(initialBookmarkedIds),
   );
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
-  const [sort, setSort] = useState<SortOption>(initialSort);
   const [selectedTech, setSelectedTech] = useState<Tech | null>(null);
   const [contributeOpen, setContributeOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(initialTechs.length === 20);
   const [loading, setLoading] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // Tag toggle — sync with URL
   const handleTagToggle = useCallback(
@@ -65,64 +84,65 @@ export function HomeFeed({
         ? selectedTags.filter((t) => t !== tagId)
         : [...selectedTags, tagId];
       setSelectedTags(next);
-      const params = new URLSearchParams(searchParams.toString());
-      next.length > 0 ? params.set("tags", next.join(",")) : params.delete("tags");
-      router.replace(`/?${params.toString()}`);
     },
-    [selectedTags, searchParams, router],
+    [selectedTags, setSelectedTags],
   );
 
   const handleTagClear = useCallback(() => {
     setSelectedTags([]);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("tags");
-    router.replace(`/?${params.toString()}`);
-  }, [searchParams, router]);
+  }, [setSelectedTags]);
 
   // Sort change — sync with URL
   const handleSortChange = useCallback(
     (value: SortOption) => {
       setSort(value);
-      const params = new URLSearchParams(searchParams.toString());
-      value === "newest" ? params.delete("sort") : params.set("sort", value);
-      router.replace(`/?${params.toString()}`);
     },
-    [searchParams, router],
+    [setSort],
   );
 
   // Reload khi searchParams thay đổi (search, tags, sort)
   useEffect(() => {
-    const q       = searchParams.get("q") ?? "";
-    const tagsParam = searchParams.get("tags");
-    const sortParam = (searchParams.get("sort") ?? "newest") as SortOption;
-    const tags    = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
-
-    setSelectedTags(tags);
-    setSort(sortParam);
     setPage(0);
     setHasMore(true);
 
-    getTechs({ search: q, tags, sort: sortParam }).then((data) => {
+    getTechs({ search, tags: selectedTags, sort }).then((data) => {
       setTechs(data);
       setHasMore(data.length === 20);
     });
-  }, [searchParams]);
+  }, [search, selectedTags, sort]);
 
   // Infinite scroll load more
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
-    const q         = searchParams.get("q") ?? "";
-    const tagsParam = searchParams.get("tags");
-    const sortParam = (searchParams.get("sort") ?? "newest") as SortOption;
-    const tags      = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
-    const next      = page + 1;
-    const more      = await getTechs({ search: q, tags, sort: sortParam, page: next });
+    const next = page + 1;
+    const more = await getTechs({
+      search,
+      tags: selectedTags,
+      sort,
+      page: next,
+    });
     setTechs((prev) => [...prev, ...more]);
     setPage(next);
     setHasMore(more.length === 20);
     setLoading(false);
-  };
+  }, [hasMore, loading, page, search, selectedTags, sort]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   // Bookmark toggle
   const handleBookmark = async (techId: string) => {
@@ -154,19 +174,32 @@ export function HomeFeed({
           {/* Hero */}
           <section className="mb-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-12">
-              <div className="relative max-w-[320px] lg:max-w-[390px] overflow-hidden shrink-0">
-                <pre className="text-[11px] lg:text-[13px] tracking-[-1px] leading-[125%] text-muted-foreground/30 select-none whitespace-pre font-[family-name:var(--font-geist-mono)]">
-                  {`████████╗███████╗ ██████╗██╗  ██╗\n╚══██╔══╝██╔════╝██╔════╝██║  ██║\n   ██║   █████╗  ██║     ███████║\n   ██║   ██╔══╝  ██║     ██╔══██║\n   ██║   ███████╗╚██████╗██║  ██║\n   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝`}
+                 <div className="relative font-mono text-[11px] leading-[125%] lg:text-[13px] font-[family-name:var(--font-geist-mono)]">
+                {/* Background Layer (Muted) */}
+                <pre className="text-muted-foreground/30 whitespace-pre select-none ">
+                  {`████████╗███████╗  ██████╗██╗  ██╗
+╚══██╔══╝██╔════╝ ██╔════╝██║  ██║
+   ██║   █████╗   ██║     ███████║
+   ██║   ██╔══╝   ██║     ██╔══██║
+   ██║   ███████╗ ╚██████╗██║  ██║
+   ╚═╝   ╚══════╝  ╚═════╝╚═╝  ╚═╝`}
                 </pre>
-                <pre className="absolute top-0 left-0 text-[11px] lg:text-[13px] tracking-[-1px] leading-[125%] text-foreground select-none whitespace-pre font-[family-name:var(--font-geist-mono)]">
-                  {`████████ ███████  ██████ ██   ██\n   ██    ██      ██      ██   ██\n   ██    █████   ██      ███████\n   ██    ██      ██      ██   ██\n   ██    ███████  ██████ ██   ██`}
+
+                {/* Foreground Layer (Highlight) */}
+                <pre className="absolute top-0 left-0 text-foreground whitespace-pre select-none ">
+                  {`████████ ███████   ██████ ██   ██ 
+   ██    ██       ██      ██   ██ 
+   ██    █████    ██      ███████ 
+   ██    ██       ██      ██   ██ 
+   ██    ███████   ██████ ██   ██ 
+                                 `}
                 </pre>
               </div>
               <div className="flex flex-col gap-3 pt-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                <p className="text-2xl font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Collection of Useful Technologies
                 </p>
-                <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+                <p className="max-w-xl text-xl text-muted-foreground leading-relaxed">
                   Discover, save and share the best developer tools, libraries,
                   websites and GitHub repositories — curated by the community.
                 </p>
@@ -176,8 +209,11 @@ export function HomeFeed({
 
           {/* Sort bar */}
           <div className="mb-5 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base font-medium">
+             List technologies: {" "}
+             <span className="text-muted-foreground">
               {techs.length > 0 ? `${techs.length}+ technologies` : ""}
+              </span>
             </p>
             <Select value={sort} onValueChange={handleSortChange}>
               <SelectTrigger className="h-8 w-[170px] text-xs">
@@ -214,13 +250,12 @@ export function HomeFeed({
 
               {hasMore && (
                 <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={loadMore}
-                    disabled={loading}
-                    className="rounded-full border border-border px-6 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                  <div
+                    ref={loadMoreRef}
+                    className="text-sm text-muted-foreground"
                   >
-                    {loading ? "Loading..." : "Load more"}
-                  </button>
+                    {loading ? "Loading..." : "Loading more..."}
+                  </div>
                 </div>
               )}
             </>
@@ -235,7 +270,10 @@ export function HomeFeed({
         onNavigate={setSelectedTech}
       />
 
-      <ContributeDialog open={contributeOpen} onOpenChange={setContributeOpen} />
+      <ContributeDialog
+        open={contributeOpen}
+        onOpenChange={setContributeOpen}
+      />
     </>
   );
 }

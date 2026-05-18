@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { getLinkPreview } from "link-preview-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Notification } from "@/types/database";
 
 type PreviewData = {
   title?: string;
@@ -42,7 +43,7 @@ async function fetchPreview(url: string): Promise<PreviewData> {
   }
 }
 
-export async function approveNotification(id: string) {
+export async function approveNotification(id: string, tagIds: string[] = []) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -62,7 +63,9 @@ export async function approveNotification(id: string) {
   const name = preview.title?.trim() || deriveNameFromUrl(sourceUrl);
   const slug = slugify(name) || slugify(deriveNameFromUrl(sourceUrl));
 
-  const { error: createError } = await supabase.from("tech").insert({
+  const { data: createdTech, error: createError } = await supabase
+    .from("tech")
+    .insert({
     name,
     slug,
     description: preview.description ?? null,
@@ -72,9 +75,21 @@ export async function approveNotification(id: string) {
     og_description: preview.description ?? null,
     og_image: preview.images?.[0] ?? null,
     favicon: preview.favicons?.[0] ?? null,
-  });
+    })
+    .select("id")
+    .single();
 
   if (createError) throw new Error(createError.message);
+
+  if (tagIds.length > 0 && createdTech?.id) {
+    const rows = tagIds.map((tagId) => ({
+      tag_id: tagId,
+      tech_id: createdTech.id,
+    }));
+
+    const { error: tagError } = await supabase.from("tag_tech").insert(rows);
+    if (tagError) throw new Error(tagError.message);
+  }
 
   const { error: updateError } = await supabase
     .from("notification")
@@ -94,4 +109,33 @@ export async function rejectNotification(id: string) {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+}
+
+export async function getAdminNotifications({
+  status,
+  page,
+  limit,
+}: {
+  status: "all" | "pending" | "approved" | "rejected";
+  page: number;
+  limit: number;
+}): Promise<{ notifications: Notification[]; total: number }> {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  let query = supabase
+    .from("notification")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false });
+
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  const start = page * limit;
+  const end = start + limit - 1;
+  const { data, count, error } = await query.range(start, end);
+  if (error) throw new Error(error.message);
+
+  return { notifications: (data ?? []) as Notification[], total: count ?? 0 };
 }

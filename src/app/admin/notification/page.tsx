@@ -1,5 +1,5 @@
 import { getAdminNotifications } from "@/lib/actions/notification";
-import { getAllTags } from "@/lib/actions/tag";
+import { getAllTags } from "@/lib/actions/tags";
 import { NotificationTable } from "./notification-table";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function AdminNotificationPage({
 }) {
   const params = await searchParams;
   const status = (params.status ?? "all") as StatusFilter;
-  const page   = Math.max(0, parseInt(params.page ?? "0", 10));
+  const page = Math.max(0, parseInt(params.page ?? "0", 10));
 
   const [{ notifications, total }, tags] = await Promise.all([
     getAdminNotifications({ status, page, limit: PAGE_SIZE }),

@@ -11,7 +11,10 @@ export interface GetTechsParams {
   tags?: string[];
   page?: number;
   limit?: number;
+  sort?: SortOption;
 }
+
+export type SortOption = "newest" | "oldest" | "most_bookmarked";
 
 type TechPayload = {
   name: string;
@@ -41,6 +44,7 @@ export async function getTechs({
   tags = [],
   page = 0,
   limit = DEFAULT_PAGE_SIZE,
+  sort = "newest",
 }: GetTechsParams = {}): Promise<Tech[]> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -63,8 +67,17 @@ export async function getTechs({
 
   let query = supabase
     .from("tech")
-    .select("*, tags:tag_tech(tag:tag(id, name, created_at, updated_at))")
-    .order("created_at", { ascending: false });
+    .select("*, tags:tag_tech(tag:tag(id, name, created_at, updated_at))");
+
+  if (sort === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else if (sort === "most_bookmarked") {
+    query = query
+      .order("bookmark_count", { ascending: false })
+      .order("created_at", { ascending: false });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
 
   if (search.trim()) {
     const term = `%${search.trim()}%`;

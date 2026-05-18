@@ -1,21 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTagGroups } from "@/lib/actions/tags";
 import { cookies } from "next/headers";
-import type { Tech } from "@/types/database";
+import type { Tag, Tech } from "@/types/database";
 import { BookmarkFeed } from "./bookmark-feed";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-async function getTags() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data } = await supabase.from("tag").select("id, name").order("name");
-  return data ?? [];
-}
-
 async function getBookmarkedTechs(userId: string): Promise<Tech[]> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
+  type BookmarkRow = {
+    tech: (Omit<Tech, "tags"> & { tags?: Array<{ tag: Tag }> }) | null;
+  };
   const { data, error } = await supabase
     .from("bookmark")
     .select(
@@ -26,13 +23,17 @@ async function getBookmarkedTechs(userId: string): Promise<Tech[]> {
 
   if (error) throw new Error(error.message);
 
-  return (data ?? [])
-    .map((row) => row.tech as Tech | null)
-    .filter((tech): tech is Tech => tech !== null)
+  const rows = (data ?? []) as unknown as BookmarkRow[];
+
+  return rows
+    .map((row) => row.tech)
+    .filter(
+      (tech): tech is Omit<Tech, "tags"> & { tags?: Array<{ tag: Tag }> } =>
+        tech !== null,
+    )
     .map((tech) => ({
       ...tech,
-      tags:
-        tech.tags?.map((item: { tag: Tech["tags"][number] }) => item.tag) ?? [],
+      tags: tech.tags?.map((item) => item.tag) ?? [],
     }));
 }
 
@@ -53,7 +54,7 @@ export default async function BookmarkPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const tags = await getTags();
+  const tagGroups = await getTagGroups();
 
   if (!user) {
     redirect("/sign-in");
@@ -65,7 +66,7 @@ export default async function BookmarkPage({
   return (
     <BookmarkFeed
       initialTechs={techs}
-      tags={tags}
+      tagGroups={tagGroups}
       initialBookmarkedIds={bookmarkedIds}
       initialSearch={search}
       initialSelectedTags={selectedTags}
