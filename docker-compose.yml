@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kowlet-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Load environment variables from a file (e.g., .env or .env.production)
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
