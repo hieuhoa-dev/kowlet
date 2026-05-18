@@ -1,2 +1,0 @@
-Self-host Supabase cho môi trường Production: Tức là muốn gộp toàn bộ hơn 10 services của Supabase vào chung file docker-compose.yml này để tự chạy backend trên server của bạn (thay vì dùng dịch vụ cloud của Supabase). Việc này sẽ tạo ra một file docker-compose rất dài (~300 dòng) và cần thiết lập rất nhiều mật khẩu/secret.
-Chạy local để phát triển (Development): Thông thường trong lúc dev, bạn chỉ cần gõ lệnh npx supabase start (Supabase CLI sẽ tự động tải và chạy các container cần thiết dưới nền) chứ không cần thêm thủ công vào file docker-compose.yml của frontend.
