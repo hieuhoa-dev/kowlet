@@ -123,7 +123,7 @@ export function ContributeDialog({
               }}
               aria-invalid={!!errors.url}
             />
-            <FieldDescription>The URL of the technology's website.</FieldDescription>
+            <FieldDescription>The URL of the technology&apos;s website.</FieldDescription>
             <FieldError>{errors.url}</FieldError>
           </Field>
 
