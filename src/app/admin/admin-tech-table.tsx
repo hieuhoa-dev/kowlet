@@ -101,15 +101,19 @@ export function AdminTechTable({
   const [tagLoading, setTagLoading] = useState(false);
   const [query, setQuery] = useQueryState(
     "q",
-    parseAsString.withDefault(initialQuery ?? ""),
+    parseAsString
+      .withDefault(initialQuery ?? "")
+      .withOptions({ shallow: false }),
   );
   const [filterTagIds, setFilterTagIds] = useQueryState(
     "tags",
-    parseAsArrayOf(parseAsString).withDefault(initialSelectedTags),
+    parseAsArrayOf(parseAsString)
+      .withDefault(initialSelectedTags)
+      .withOptions({ shallow: false }),
   );
   const [currentPage, setCurrentPage] = useQueryState(
     "page",
-    parseAsInteger.withDefault(page),
+    parseAsInteger.withDefault(page).withOptions({ shallow: false }),
   );
   const [sheetTagIds, setSheetTagIds] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(query);
@@ -374,24 +378,24 @@ export function AdminTechTable({
           <span>
             Page {currentPage + 1} of {totalPages} — {total} total
           </span>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-[100px]"
               disabled={currentPage === 0}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
-              ‹
+              Previous
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-[100px]"
               disabled={currentPage >= totalPages - 1}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
-              ›
+              Next
             </Button>
           </div>
         </div>

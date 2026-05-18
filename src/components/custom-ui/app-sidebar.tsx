@@ -127,7 +127,7 @@ export function AppSidebar({
             </div>
             {selectedTags.length > 0 && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
                 onClick={onTagClear}

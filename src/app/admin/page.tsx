@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Tag, Tech } from "@/types/database";
 import { cookies } from "next/headers";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 type TechRow = Omit<Tech, "tags"> & {
   tags?: Array<{ tag: Tag }>;
