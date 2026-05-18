@@ -21,7 +21,7 @@ export function TechCard({ tech, isBookmarked, onBookmark, onClick }: TechCardPr
 
     return (
         <Card
-            className="group flex flex-col overflow-hidden border-border transition-all duration-200 hover:border-ring/50 hover:shadow-md cursor-pointer"
+            className="group flex flex-col overflow-hidden border-border transition-all duration-200 hover:border-ring/50 hover:shadow-md cursor-pointer p-0"
             onClick={() => onClick(tech)}
         >
             {/* OG Image or fallback */}
