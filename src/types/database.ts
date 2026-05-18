@@ -6,11 +6,22 @@ export type Json =
     | { [key: string]: Json | undefined }
     | Json[];
 
-// ─── Row types ────────────────────────────────────────────────────────────────
+// ─── Row types ────────────────────────────────────────────────
+
+export interface TagCategory {
+    id: string;
+    name: string;
+    slug: string;
+    icon: string | null;
+    sort_order: number;
+    created_at: string;
+}
 
 export interface Tag {
     id: string;
     name: string;
+    icon: string | null;
+    category_id: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -62,4 +73,10 @@ export interface Profile {
     role: "user" | "admin";
     created_at: string;
     updated_at: string;
+}
+
+// ─── Grouped tags for sidebar ─────────────────────────────────
+export interface TagGroup {
+    category: TagCategory;
+    tags: Tag[];
 }
