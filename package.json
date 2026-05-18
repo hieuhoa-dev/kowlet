@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "preview": "open-next build && open-next preview",
     "lint": "eslint"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "opennextjs-cloudflare": "^1.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
