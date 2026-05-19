@@ -2,7 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "kowlet",
-	"compatibility_date": "2026-05-18",
+	"compatibility_date": "2026-05-19",
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
