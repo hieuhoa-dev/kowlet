@@ -19,9 +19,17 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-   const forwardedHost = request.headers.get("x-forwarded-host");
-  const forwardedProto = request.headers.get("x-forwarded-proto") || "http";
-  const baseUrl = forwardedHost ? `${forwardedProto}://${forwardedHost}` : request.url;
+  const getBaseUrl = () => {
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (siteUrl) {
+      return siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+    }
+    // Fallback if env is missing
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") || "http";
+    return forwardedHost ? `${forwardedProto}://${forwardedHost}` : request.url;
+  };
 
+  const baseUrl = getBaseUrl();
   return NextResponse.redirect(new URL(next, baseUrl));
 }

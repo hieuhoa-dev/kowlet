@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Nginx Load Balancer
   loadbalancer:
@@ -33,3 +31,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
+    networks:
+      - app-network
+
+networks:
+  app-network:
