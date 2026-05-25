@@ -19,5 +19,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  return NextResponse.redirect(new URL(next, request.url));
+   const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "http";
+  const baseUrl = forwardedHost ? `${forwardedProto}://${forwardedHost}` : request.url;
+
+  return NextResponse.redirect(new URL(next, baseUrl));
 }

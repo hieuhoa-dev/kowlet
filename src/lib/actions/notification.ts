@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { getLinkPreview } from "link-preview-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Notification } from "@/types/database";
@@ -97,6 +98,8 @@ export async function approveNotification(id: string, tagIds: string[] = []) {
     .eq("id", id);
 
   if (updateError) throw new Error(updateError.message);
+
+  revalidatePath("/admin/notification");
 }
 
 export async function rejectNotification(id: string) {
@@ -109,6 +112,8 @@ export async function rejectNotification(id: string) {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/notification");
 }
 
 export async function getAdminNotifications({

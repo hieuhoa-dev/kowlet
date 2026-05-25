@@ -78,6 +78,11 @@ export function NotificationTable({
 
   const totalPages = Math.ceil(total / pageSize);
 
+  // Sync server data to local state on refresh
+  useEffect(() => {
+    setNotifications(initialNotifications);
+  }, [initialNotifications]);
+
   // ─── Supabase Realtime ────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
@@ -124,20 +129,32 @@ export function NotificationTable({
 
   // ─── Actions ──────────────────────────────────────────────────
   const handleApprove = async (id: string) => {
-    setLoading(id + "-approve");
-    await approveNotification(id, selectedTagIds);
-    setLoading(null);
-    setSelected(null);
-    setSelectedTagIds([]);
-    router.refresh();
+    try {
+      setLoading(id + "-approve");
+      await approveNotification(id, selectedTagIds);
+    } catch (e) {
+      console.error("Error approving:", e);
+      alert(e instanceof Error ? e.message : "Error approving notification");
+    } finally {
+      setLoading(null);
+      setSelected(null);
+      setSelectedTagIds([]);
+      // The server action now calls revalidatePath, so router.refresh() is redundant 
+      // but keeping it doesn't hurt. Next.js will automatically refresh.
+    }
   };
 
   const handleReject = async (id: string) => {
-    setLoading(id + "-reject");
-    await rejectNotification(id);
-    setLoading(null);
-    setSelected(null);
-    router.refresh();
+    try {
+      setLoading(id + "-reject");
+      await rejectNotification(id);
+    } catch (e) {
+      console.error("Error rejecting:", e);
+      alert(e instanceof Error ? e.message : "Error rejecting notification");
+    } finally {
+      setLoading(null);
+      setSelected(null);
+    }
   };
 
   const toggleTag = (id: string) =>

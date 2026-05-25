@@ -14,7 +14,7 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "Kowlet - Collection of Useful Technologies",
   description: "Discover, save, and manage useful technologies, developer tools, websites, and GitHub repositories.",
   icons: {
